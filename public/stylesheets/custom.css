@@ -15,25 +15,38 @@
     z-index: 0;
     box-shadow: none;
     position:relative;
-    top:16px;
     right:0;
     left:0;
-    height:50px;
+    padding-bottom:25px;
+    height:75px;
     width:100%;
     margin-bottom: 28px;
 }
+
+.polaroid {
+    position: relative;
+    background: #fff;
+    width: 35px;
+    padding: 2px;
+    margin: 10px;
+    text-align: center; 
+    -moz-box-shadow: 1px 1px 3px #222;
+    -webkit-box-shadow: 1px 1px 3px #222;
+    box-shadow: 1px 1px 3px #222;
+}
+
 
 #transformers-rule {
     width: 100%; position: relative;
 }
 
 .container {
-    width: 200px; height: 200px;
+    width: 215px; height: 215px;
     -webkit-perspective: 1000;
 }
 
 .card {
-    width: 200px; height: 200px;
+    width: 215px; height: 215px;
     -webkit-transform-style: preserve-3d;
     -webkit-transition: 1s;
 }
@@ -52,48 +65,33 @@
 }
 .megatron .front {
     background: #a3a3a3 url(/images/paper.png); 
-    background: #8d7d77;
-    background: -webkit-gradient(linear, left top, left bottom, from(rgba(132, 110, 100, 0.8)),to(rgba(101, 84, 76, 0.8)));
-    background: -webkit-linear-gradient(top, rgba(132, 110, 100, 0.8), rgba(101, 84, 76, 0.8));
-    background: -moz-linear-gradient(top, rgba(132, 110, 100, 0.8), rgba(101, 84, 76, 0.8));
-    background: -o-linear-gradient(top, rgba(132, 110, 100, 0.8), rgba(101, 84, 76, 0.8));
-    background: -ms-linear-gradient(top, rgba(132, 110, 100, 0.8), rgba(101, 84, 76, 0.8));
-    background: linear-gradient(top, rgba(132, 110, 100, 0.8), rgba(101, 84, 76, 0.8));
-    padding: 10px 10px 10px 10px;
-    border-bottom: 1px solid #6c615c;
-    filter: progid:DXImageTransform.Microsoft.gradient(GradientType=0,StartColorStr='#9d8b83', EndColorStr='#847670');
-    border-top-left-radius: 1px;
-    border-top-right-radius: 1px;
-    background: rgba(0, 0, 0, 0.02);
-    z-index: 0;
-    box-shadow: none;
+    border: 2px solid #A4A4A4;
+    box-shadow: 1px 1px 3px #888888;
 }
 .megatron .back {
-    width: 200px; height: 200px; padding: 20px;
+    width: 215px; height: 215px; padding: 2px;
     -webkit-transform: rotateY(180deg);
-    background: #8d7d77;
-    background: -webkit-gradient(linear, left top, left bottom, from(rgba(132, 110, 100, 0.8)),to(rgba(101, 84, 76, 0.8)));
-    background: -webkit-linear-gradient(top, rgba(132, 110, 100, 0.8), rgba(101, 84, 76, 0.8));
-    background: -moz-linear-gradient(top, rgba(132, 110, 100, 0.8), rgba(101, 84, 76, 0.8));
-    background: -o-linear-gradient(top, rgba(132, 110, 100, 0.8), rgba(101, 84, 76, 0.8));
-    background: -ms-linear-gradient(top, rgba(132, 110, 100, 0.8), rgba(101, 84, 76, 0.8));
-    background: linear-gradient(top, rgba(132, 110, 100, 0.8), rgba(101, 84, 76, 0.8));
-    padding: 10px 10px 10px 10px;
-    border-bottom: 1px solid #6c615c;
-    filter: progid:DXImageTransform.Microsoft.gradient(GradientType=0,StartColorStr='#9d8b83', EndColorStr='#847670');
-    border-top-left-radius: 1px;
-    border-top-right-radius: 1px;
-    background: rgba(0, 0, 0, 0.02);
-    z-index: 0;
-    box-shadow: none;
+    background: #a3a3a3 url(/images/paper.png); 
+    border: 2px solid #A4A4A4;
+    box-shadow: 1px 1px 3px #888888;
 }
 
 .megatron img {
     float: right;
+    vertical-align: middle;
+	min-width: 215px;
+	min-height: 215px;
+    max-width: 215px;
+	max-height: 215px;
+	display: -moz-inline-box; /* Firefox 2 */
+	display: inline-block;
 }
 .megatron p {
-    float: left; width: 185px; margin: 0 0 20px 0;
-    font-size: 17px; line-height: 28px; color: #4c4c4c; 
+    font-size: 13px; line-height: 16px; color: #4c4c4c; 
+}
+
+.megatron h3 {
+    font-size: 15px; line-height: 17px; color: #4c4c4c; 
 }
 
 .front {

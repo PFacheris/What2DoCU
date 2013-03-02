@@ -10,40 +10,48 @@ html(lang="en", style="min-height:100%;position:relative;")
     script(type="text/javascript", src='javascripts/zepto.min.js') 
     script(type="text/javascript", src='javascripts/foundation.min.js') 
     script(type="text/javascript", src="http://localhost:8888/socket.io/socket.io.js")
-  body(style='background:url("images/BG2.jpg");background-size:cover;')
+  body(style='background:url("images/BG2.jpg") no-repeat center center fixed; -webkit-background-size: cover; -moz-background-size: cover; -o-background-size: cover;background-size: cover;')
     .row(style='position:relative;top:-16px;padding:0;')
-      #container.small-11.small-centered.columns(style='padding:0;background:#fcfcfc;repeat-x left bottom;border:1px solid #ccc;border-bottom:2px solid #bbb;border-top:1px solid #ddd;border-radius:10px;-webkit-border-radius:10px;-moz-border-radius:10px;')
+      #container.small-11.small-centered.columns(style='padding:0;background:#fcfcfc;repeat-x left bottom;border:1px solid #ccc;border-bottom:2px solid #bbb;border-top:1px solid #ddd;border-radius:10px;-webkit-border-radius:10px;-moz-border-radius:10px;height:100%;padding-bottom:20px;')
         .row
           .small-12.small-centered.columns
             .top
-              h3(style='position:relative;top:-16px;') What2DoCU
-              
-        .row(style='padding-left:10px;')
-          .small-4.columns
-            .container.megatron
-              .card
-                .face.front
-                  img(src='http://images.wikia.com/transformers/images/8/8f/Megatron_portal.png', height='200px', width='200px')
-                .face.back
-                  p test
+              h2(style='position:relative;left:10px;display:inline-block') What2DoCU
+              div(style='position:absolute;right:50%;left:50%;top:15px;display:inline-block;')
+                p#message
+              div(style='position:absolute;right:15px;display:inline-block;vertical-align:middle;')
+                img.polaroid(src=locals.picture.data.url, style='display:inline-block')
+                p(style='float:right;display:inline-block;font-size:10px;') #{locals.name}<br />#{locals.education ? locals.education[locals.education.length - 1].school.name : ""}
 
+        ul.row#content(style='list-style-type:none')     
         
-    script(type='text/javascript')
-      //Visual Styles
-      $(document).ready( function() {
-        $('#container').height($(window).height());
-      });
-      $(window).on('resize', function() {
-        $('#container').height($(window).height());
-      });
-
     script
       //Sockets
+      var count = 0;
+      var social;
+      var events;
       $(document).ready(function () {
-        var events = io.connect('http://localhost:8888/events');
+        events = io.connect('http://localhost:8888/events');
+        social = io.connect('http://localhost:8888/social');
         events.on('new', eventReceived);
+        social.on('interest', clickReceived);
       });
       
+      $('#content').delegate('.event', 'click', function(event) {
+          console.log(event.target);
+          social.emit("click", {"event": {"name": $(event.target).find('#name').html(), "link": $(event.target).find('a').attr('href')}});
+      }); 
+     
       function eventReceived(event){
-        //$('#content').prepend(event.name);
+          if (count <= 32)
+          {
+              var template = '<li class="event" id="' + event.id + '"><a href="http://facebook.com/' + event.id + '" target="_blank"><div class="container megatron"><div class="card"><div class="face front"><img src="//graph.facebook.com/' + event.id + '/picture?type=large"></div><div class="face back"><h3 id="name">' + event.name + '</h3><p>Begins at: ' + event.start_time + '<br>Ends at: ' + event.end_time + '<br>Location: ' + event.location + '</p></div></div></div></a></li>'
+
+              $('#content').append(template);
+              count++;
+          }
+      }
+      
+      function clickReceived(event) {
+          $('#message').html(event.user.name + " is checking out <a href='" + event.event.link + "'>" + event.event.name + "</a>");
       }

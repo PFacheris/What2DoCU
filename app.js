@@ -42,26 +42,23 @@ app.configure(function () {
 });
 
 
-/*var events = io
-.of('/events')
-.on('connection', function (socket) {
-    socket.emit('new', {
-        name: 'test',
-        description: 'test2',
-        location: 'will get',
-        date: 'test3',
-        picture: 'picture'
+var events = io.of('/events');
+var social = io.of('/social')
+.on('click', function (socket) {
+    socket.get("event", function(err, event) {
+        social.broadcast('interest', {"event": {"name": event.name, "link": event.link}});
     });
-});*/
+});
 
 app.engine('jade', require('jade').__express);
 app.set('view engine', 'jade');
 
 app.get('/', facebook.loginRequired(), function (req, res) {
-    //res.render('index');
+    req.facebook.api('/me?fields=id,name,link,picture,education', function(err, user) {
+        res.render('index', {locals: user});
+    });
     getEvents(req, function(combined) {
-        retrieveEvents(req, combined, console.log);
-        
+        makeQuery(req, combined, 0);
     });
 });
 
@@ -131,15 +128,8 @@ var getEvents = function(req, res) {
     });
 }
 
-var retrieveEvents = function(req, combined, callback) {
-    var eventsJSON = [];
-    makeQuery(eventsJSON, req, combined, 0, function () {
-        callback(eventsJSON);
-    });
-}
-
-var makeQuery = function(eventsJSON, req, combined, i, callback) {
-    if (i < 30)
+var makeQuery = function(req, combined, i) {
+    if (i < 32)
     {
         var query = combined[i].id + "?fields=name,start_time,end_time,location,picture";
         req.facebook.api('/' + query, function(err, results){
@@ -147,11 +137,9 @@ var makeQuery = function(eventsJSON, req, combined, i, callback) {
                 console.log("error");
             else
             {
-               eventsJSON.push(results);
-               makeQuery(eventsJSON, req, combined, i + 1, callback);
+                events.emit('new', results);
+                makeQuery(req, combined, i + 1);
             }
         });
     }
-    else
-        callback({"msg":""});
 }
