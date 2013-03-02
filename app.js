@@ -14,7 +14,7 @@ var application_root = process.cwd();
 * Listening Port
 */
 var port = process.env.PORT || 5000;
-var server = http.createServer(app).listen(80);
+var server = http.createServer(app).listen(8888);
 app.listen(port, function () {
     console.log("Listening on " + port);
 });
@@ -45,13 +45,12 @@ app.configure(function () {
 var events = io
 .of('/events')
 .on('connection', function (socket) {
-    socket.emit('a message', {
-        that: 'only'
-        , '/chat': 'will get'
-    });
-    events.emit('a message', {
-        everyone: 'in'
-        , '/chat': 'will get'
+    socket.emit('new', {
+        name: 'test',
+        description: 'test2',
+        location: 'will get',
+        date: 'test3',
+        picture: 'picture'
     });
 });
 

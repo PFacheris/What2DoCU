@@ -1,12 +1,33 @@
 doctype 5
-html(lang="en")
+html(lang="en", style="min-height:100%;position:relative;")
   head
     title="What2DoCU"
     link(rel='stylesheet', href='stylesheets/normalize.css')
     link(rel='stylesheet', href='stylesheets/foundation.min.css')
-    script(src='javascripts/zepto.min.js') 
-    script(src='javascripts/foundation.min.js') 
-  body(style='background:url("images/BG.png");')
-    .row(style='height:500px;')
-      .small-8.small-centered.columns(style='background:#333;height:100%')
-        p 
+    script(type="text/javascript", src='javascripts/zepto.min.js') 
+    script(type="text/javascript", src='javascripts/foundation.min.js') 
+    script(type="text/javascript", src="http://localhost:8888/socket.io/socket.io.js")
+  body(style='background:url("images/BG2.jpg");background-size:cover;')
+    .row(style='position:relative;top:-16px;')
+      .small-10.small-centered.columns(style='background:#333;height:100%')
+        p#content
+        
+    script(type='text/javascript')
+      //Visual Styles
+      $(document).ready( function() {
+        $('.row').height($(window).height());
+      });
+      $(window).on('resize', function() {
+        $('.row').height($(window).height());
+      });
+
+    script
+      //Sockets
+      $(document).ready(function () {
+        var events = io.connect('http://localhost:8888/events');
+        events.on('new', eventReceived);
+      });
+      
+      function eventReceived(event){
+        $('#content').prepend(event.name);
+      }
