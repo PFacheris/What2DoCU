@@ -17,7 +17,7 @@ html(lang="en", style="min-height:100%;position:relative;")
           .small-12.small-centered.columns
             .top
               h2(style='position:relative;left:10px;display:inline-block') What2DoCU
-              div(style='position:absolute;right:50%;left:50%;top:15px;display:inline-block;')
+              div(style='position:absolute;right:0;width:50%;top:15px;display:inline-block')
                 p#message
               div(style='position:absolute;right:15px;display:inline-block;vertical-align:middle;')
                 img.polaroid(src=locals.picture.data.url, style='display:inline-block')
@@ -38,8 +38,7 @@ html(lang="en", style="min-height:100%;position:relative;")
       });
       
       $('#content').delegate('.event', 'click', function(event) {
-          console.log(event.target);
-          social.emit("click", {"event": {"name": $(event.target).find('#name').html(), "link": $(event.target).find('a').attr('href')}});
+          social.emit("click", {"event": {"name": $(this).find('#name').html(), "link": $(this).find('a').attr('href')}});
       }); 
      
       function eventReceived(event){
@@ -53,5 +52,5 @@ html(lang="en", style="min-height:100%;position:relative;")
       }
       
       function clickReceived(event) {
-          $('#message').html(event.user.name + " is checking out <a href='" + event.event.link + "'>" + event.event.name + "</a>");
+          $('#message').html("Someone is checking out <a href='" + event.event.link + "'>" + event.event.name + "</a>, you should too!");
       }

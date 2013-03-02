@@ -44,9 +44,10 @@ app.configure(function () {
 
 var events = io.of('/events');
 var social = io.of('/social')
-.on('click', function (socket) {
-    socket.get("event", function(err, event) {
-        social.broadcast('interest', {"event": {"name": event.name, "link": event.link}});
+.on('connection', function (sock) {
+    sock.on('click', function (data) {
+        console.log(data);
+        sock.broadcast.emit('interest', data);
     });
 });
 
