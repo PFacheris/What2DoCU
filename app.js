@@ -42,7 +42,7 @@ app.configure(function () {
 });
 
 
-var events = io
+/*var events = io
 .of('/events')
 .on('connection', function (socket) {
     socket.emit('new', {
@@ -52,18 +52,82 @@ var events = io
         date: 'test3',
         picture: 'picture'
     });
-});
+});*/
 
 app.engine('jade', require('jade').__express);
 app.set('view engine', 'jade');
 
 app.get('/', facebook.loginRequired(), function (req, res) {
-    res.render('index');
+    //res.render('index');
+    var query = "SELECT+eid+FROM+event_member+WHERE+uid+IN+(SELECT+uid+FROM+user+WHERE+uid+IN+(SELECT+uid1+FROM+friend+WHERE+uid2=me())+AND+'Columbia'+IN+affiliations)+AND+start_time>=1362210094+AND+start_time<=1362808800";
+    req.facebook.api('/fql?q=' + query, function(err, results) {
+        console.log(results);
+    });
+    //console.log(getEvents(req));
 });
 
-var getEvents = function() {
-    var query = "SELECT+eid+FROM+event_member+WHERE+uid+IN+(SELECT+uid+FROM+user+WHERE+uid+IN+(SELECT+uid1+FROM+friend+WHERE+uid2+=+me())+AND+'Columbia'+IN+affiliations)+AND+start_time+>=+1362210094+AND+start_time+<=+1362808800";
-    req.facebook.api('/fql?q=' + query, function(err, events) {
-        return something;     
+
+//returns sorted array in form [ {id: <id1>, number: <number1>}, {id: <id2>, number: <number2>},...]
+var getEvents = function(req) {
+    var query = "SELECT+eid+FROM+event_member+WHERE+uid+IN+(SELECT+uid+FROM+user+WHERE+uid+IN+(SELECT+uid1+FROM+friend+WHERE+uid2=me())+AND+'Columbia'+IN+affiliations)+AND+start_time>=1362210094+AND+start_time<=1362808800";
+    req.facebook.api('/fql?q=' + query, function(err, results) {
+        if(err)
+            return;
+            
+        console.log(results);
+        var ids = [], results = results.data;
+
+
+        // reformats array of ids
+        for (var i = 0; i < results.length; i++){
+            var datum = results[i];
+            ids.push(datum.eid);
+        }
+
+        //create list of unique ids
+        var uniqueID = [];
+        var add = true
+        for (var i = 0; i < ids.length; i++) {
+
+            add = true;
+
+            for (var j =0; j < uniqueID.length; j++) { //(!uniqueID.contains(ids[i]) {
+
+                if (ids[i] == uniqueID[j]) {
+                    add = false
+                }
+            }
+            if (add) {
+                uniqueID.push(ids[i]);
+            }
+        }
+
+        //initialize count array
+        var count = [];
+        for (var i = 0; i < uniqueID.length; i++){
+            count[i]=0;
+        }
+
+        //count duplicates
+        for (var i = 0; i < ids.length; i++){
+            for (var j = 0; j <uniqueID.length; j++) {
+                if (ids[i] == uniqueID[j]) {
+                    count[j]++;
+                }
+            }
+        }
+
+        //combine and sort
+        var combined = [];
+        for (var i = 0; i < uniqueID.length; i++) {
+            combined.push({id: uniqueID[i], number: count[i]});
+        }
+
+        //sort based on count
+        combined.sort(function(a,b) {
+            return b.number - a.number;
+        });
+
+        return combined
     });
 }
