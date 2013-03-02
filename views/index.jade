@@ -17,7 +17,7 @@ html(lang="en", style="min-height:100%;position:relative;")
           .small-12.small-centered.columns
             .top
               h2(style='position:relative;left:10px;display:inline-block') What2DoCU
-              div(style='position:absolute;right:0;width:50%;top:15px;display:inline-block')
+              div(style='position:absolute;left:25%;width:50%;top:15px;display:inline-block')
                 p#message
               div(style='position:absolute;right:15px;display:inline-block;vertical-align:middle;')
                 img.polaroid(src=locals.picture.data.url, style='display:inline-block')
@@ -42,12 +42,23 @@ html(lang="en", style="min-height:100%;position:relative;")
       }); 
      
       function eventReceived(event){
-          if (count <= 32)
+          if (count <= 44)
           {
-              var template = '<li class="event" id="' + event.id + '"><a href="http://facebook.com/' + event.id + '" target="_blank"><div class="container megatron"><div class="card"><div class="face front"><img src="//graph.facebook.com/' + event.id + '/picture?type=large"></div><div class="face back"><h3 id="name">' + event.name + '</h3><p>Begins at: ' + event.start_time + '<br>Ends at: ' + event.end_time + '<br>Location: ' + event.location + '</p></div></div></div></a></li>'
+              var template;
+              if (event)
+              {
+                  if (event.id)
+                  {
+                      template = '<li class="event" id="' + event.id + '"><a href="http://facebook.com/' + event.id + '" target="_blank"><div class="container megatron"><div class="card"><div class="face front"><img src="//graph.facebook.com/' + event.id + '/picture?type=large"></div><div class="face back"><h3 id="name">' + event.name + '</h3><p>Begins at: ' + event.start_time + '<br>Ends at: ' + event.end_time + '<br>Location: ' + event.location + '</p></div></div></div></a></li>'
+                  }
+                  else
+                  {
+                      template = '<li class="event" id="columbia"><a><div class="container megatron"><div class="card"><div class="face front"><img src="/images/crown.jpg"></div><div class="face back"><h3 id="name">' + event.name + '</h3><p>Begins at: ' + event.start_time + '<br>Location: ' + event.location + '</p></div></div></div></a></li>'
+                  }
+                  $('#content').append(template);
 
-              $('#content').append(template);
-              count++;
+                  count++;
+              }
           }
       }
       

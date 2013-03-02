@@ -19,7 +19,7 @@ app.listen(port, function () {
     console.log("Listening on " + port);
 });
 
-var io = require('socket.io').listen(server);
+var io = require('socket.io').listen(server, { log: false });
 
 /*
 * Application Logic
@@ -46,7 +46,6 @@ var events = io.of('/events');
 var social = io.of('/social')
 .on('connection', function (sock) {
     sock.on('click', function (data) {
-        console.log(data);
         sock.broadcast.emit('interest', data);
     });
 });
@@ -59,36 +58,32 @@ app.get('/', facebook.loginRequired(), function (req, res) {
         res.render('index', {locals: user});
     });
     getEvents(req, function(combined) {
-        makeQuery(req, combined, 0);
-        
-        URL =" http://data.adicu.com/affairs/student_events?pretty=true&api_token=51314d8e97ec7700025e0afd";
-        
-        var get_req = http.get(URL, function(response) {
-        var body = "";
-        response.on('data', function (chunk) {
-            body += chunk;
+        makeQuery(req, combined, 0, function () {
+
+            URL =" http://data.adicu.com/affairs/student_events?pretty=false&api_token=51314d8e97ec7700025e0afd";
+
+            var get_req = http.get(URL, function(response) {
+                var body = "";
+                response.on('data', function (chunk) {
+                    body += chunk;
+                });
+                response.on('end', function() { 
+                    var response = JSON.parse(body).data;
+                    var toSendADI = [];
+
+
+                    for (var i = 0; i < 12; i ++) {
+                        toSendADI.push({name: response[i].Event, start_time: response[i].Date + ", " + response[i].Time, location: response[i].Location});
+                    }
+
+                    makeQuery2(req, toSendADI, 0);
+                })
+                response.on('error', function(err) {
+                    console.log("error"); 
+                });
+
+            });
         });
-        response.on('end', function() { 
-console.log(body);
-console.log(body.status_code);
-console.log(body["data"]);
-body = body.data; var toSendADI = [];
-console.log(body);
-
-
-for (var i = 0; i < 10; i ++) {
-    toSendADI.push({name: body[i].Event, start_time: body[i].Date + ", " + body[i].Time, location: body[i].Location});
-}
-
-console.log(toSendADI);
-
-     makeQuery2(req, toSendADI, 0);
-        })
-        response.on('error', function(err) {
-            callback({"msg": "Error sending data."}); 
-        });
-
-    });
     });
 });
 
@@ -100,7 +95,6 @@ var getEvents = function(req, res) {
         if(err)
             return;
             
-       // console.log(results);
         var ids = [], results = results.data;
 
 
@@ -158,7 +152,7 @@ var getEvents = function(req, res) {
     });
 }
 
-var makeQuery = function(req, combined, i) {
+var makeQuery = function(req, combined, i, callback) {
     if (i < 32)
     {
         var query = combined[i].id + "?fields=name,start_time,end_time,location,picture";
@@ -168,15 +162,17 @@ var makeQuery = function(req, combined, i) {
             else
             {
                 events.emit('new', results);
-                makeQuery(req, combined, i + 1);
+                makeQuery(req, combined, i + 1, callback);
             }
         });
     }
+    else
+        callback();
 }
 
 var makeQuery2 = function(req, combined, i) {
     if (i<12) {
         events.emit('new', combined[i]);
-        makeQuery(req, combined, i+1);
+        makeQuery2(req, combined, i+1);
     }
 }
