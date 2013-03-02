@@ -58,19 +58,26 @@ app.engine('jade', require('jade').__express);
 app.set('view engine', 'jade');
 
 app.get('/', facebook.loginRequired(), function (req, res) {
+<<<<<<< HEAD
     res.render('index');
     //console.log(getEvents(req));
+=======
+    //res.render('index');
+    getEvents(req, function(combined) {
+        retrieveEvents(req, combined);
+    });
+>>>>>>> 5ee67197a09346b2e387d050cba8f1d13cf6ad56
 });
 
 
 //returns sorted array in form [ {id: <id1>, number: <number1>}, {id: <id2>, number: <number2>},...]
-var getEvents = function(req) {
+var getEvents = function(req, res) {
     var query = "SELECT+eid+FROM+event_member+WHERE+uid+IN+(SELECT+uid+FROM+user+WHERE+uid+IN+(SELECT+uid1+FROM+friend+WHERE+uid2=me())+AND+'Columbia'+IN+affiliations)+AND+start_time>=1362210094+AND+start_time<=1362808800";
     req.facebook.api('/fql?q=' + query, function(err, results) {
         if(err)
             return;
             
-        console.log(results);
+       // console.log(results);
         var ids = [], results = results.data;
 
 
@@ -124,6 +131,25 @@ var getEvents = function(req) {
             return b.number - a.number;
         });
 
-        return combined
+        res(combined);
     });
+}
+
+var retrieveEvents = function(req, combined) {
+
+    var eventsJSON = [];
+    for (var i = 0; i < eventsJSON.length; i++) { 
+        
+        
+        var query =combined[i].id + "?fields=name,start_time,end_time,location,picture";
+        req.facebook.api('/' + query, function(err, results){
+        
+        if (err) {return;}
+        eventsJSON.push(results);
+        
+        });
+
+    }
+console.log(eventsJSON);
+    return eventsJSON;
 }
