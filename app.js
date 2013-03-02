@@ -58,15 +58,11 @@ app.engine('jade', require('jade').__express);
 app.set('view engine', 'jade');
 
 app.get('/', facebook.loginRequired(), function (req, res) {
-<<<<<<< HEAD
-    res.render('index');
-    //console.log(getEvents(req));
-=======
     //res.render('index');
     getEvents(req, function(combined) {
-        retrieveEvents(req, combined);
+        retrieveEvents(req, combined, console.log);
+        
     });
->>>>>>> 5ee67197a09346b2e387d050cba8f1d13cf6ad56
 });
 
 
@@ -135,21 +131,27 @@ var getEvents = function(req, res) {
     });
 }
 
-var retrieveEvents = function(req, combined) {
-
+var retrieveEvents = function(req, combined, callback) {
     var eventsJSON = [];
-    for (var i = 0; i < eventsJSON.length; i++) { 
-        
-        
-        var query =combined[i].id + "?fields=name,start_time,end_time,location,picture";
-        req.facebook.api('/' + query, function(err, results){
-        
-        if (err) {return;}
-        eventsJSON.push(results);
-        
-        });
+    makeQuery(eventsJSON, req, combined, 0, function () {
+        callback(eventsJSON);
+    });
+}
 
+var makeQuery = function(eventsJSON, req, combined, i, callback) {
+    if (i < 30)
+    {
+        var query = combined[i].id + "?fields=name,start_time,end_time,location,picture";
+        req.facebook.api('/' + query, function(err, results){
+            if (err)
+                console.log("error");
+            else
+            {
+               eventsJSON.push(results);
+               makeQuery(eventsJSON, req, combined, i + 1, callback);
+            }
+        });
     }
-console.log(eventsJSON);
-    return eventsJSON;
+    else
+        callback({"msg":""});
 }
