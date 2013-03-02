@@ -3,8 +3,8 @@
 */
 //Dependencies
 var http = require('http'),
-    express = require('express'),
-    facebook = require('facebook-node-sdk');
+express = require('express'),
+facebook = require('facebook-node-sdk');
 
 var app = express();
 
@@ -28,6 +28,9 @@ var io = require('socket.io').listen(server);
 // Config
 app.configure(function () {
     app.set('title', 'What2DoCU');
+    app.use(express.bodyParser());
+    app.use(express.cookieParser());
+    app.use(express.session({ secret: 'foo bar' }));
     app.use(facebook.middleware({appId: '136332289871201', secret: '72ce5a8da6c8d89fec92d76b78fc620a'}));
     app.use(express.compress());
     app.use(app.router);
@@ -58,3 +61,10 @@ app.set('view engine', 'jade');
 app.get('/', facebook.loginRequired(), function (req, res) {
     res.render('index');
 });
+
+var getEvents = function() {
+    var query = "SELECT+eid+FROM+event_member+WHERE+uid+IN+(SELECT+uid+FROM+user+WHERE+uid+IN+(SELECT+uid1+FROM+friend+WHERE+uid2+=+me())+AND+'Columbia'+IN+affiliations)+AND+start_time+>=+1362210094+AND+start_time+<=+1362808800";
+    req.facebook.api('/fql?q=' + query, function(err, events) {
+        return something;     
+    });
+}
