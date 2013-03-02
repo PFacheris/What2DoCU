@@ -1,0 +1,15 @@
+{
+  "name": "What2DoCu",
+  "description": "Find things to do on and off campus.",
+  "version": "0.0.1",
+  "private": true,
+  "dependencies": {
+    "express": ">=3.1.0",
+    "socket.io": ">=0.9.13",
+    "jade": ">=0.28.1"
+  },
+  "engines": {
+    "node": "0.8.14",
+    "npm": "1.1.65"
+  }
+}
