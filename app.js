@@ -58,11 +58,7 @@ app.engine('jade', require('jade').__express);
 app.set('view engine', 'jade');
 
 app.get('/', facebook.loginRequired(), function (req, res) {
-    //res.render('index');
-    var query = "SELECT+eid+FROM+event_member+WHERE+uid+IN+(SELECT+uid+FROM+user+WHERE+uid+IN+(SELECT+uid1+FROM+friend+WHERE+uid2=me())+AND+'Columbia'+IN+affiliations)+AND+start_time>=1362210094+AND+start_time<=1362808800";
-    req.facebook.api('/fql?q=' + query, function(err, results) {
-        console.log(results);
-    });
+    res.render('index');
     //console.log(getEvents(req));
 });
 
