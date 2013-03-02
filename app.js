@@ -3,7 +3,8 @@
 */
 //Dependencies
 var http = require('http'),
-    express = require('express');
+    express = require('express'),
+    facebook = require('facebook-node-sdk');
 
 var app = express();
 
@@ -27,9 +28,8 @@ var io = require('socket.io').listen(server);
 // Config
 app.configure(function () {
     app.set('title', 'What2DoCU');
+    app.use(facebook.middleware({appId: '136332289871201', secret: '72ce5a8da6c8d89fec92d76b78fc620a'}));
     app.use(express.compress());
-    app.use(express.bodyParser());
-    app.use(express.methodOverride());
     app.use(app.router);
     app.use(express.static(application_root + "/public"));
     app.use(express.errorHandler({
@@ -55,6 +55,6 @@ var events = io
 app.engine('jade', require('jade').__express);
 app.set('view engine', 'jade');
 
-app.get('/', function (req, res) {
+app.get('/', facebook.loginRequired(), function (req, res) {
     res.render('index');
 });
