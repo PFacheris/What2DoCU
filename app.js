@@ -3,98 +3,159 @@
 */
 //Dependencies
 var http = require('http'),
-express = require('express'),
-facebook = require('facebook-node-sdk');
+    express = require('express'),
+    facebook = require('facebook-node-sdk');
+
 
 var app = express();
-
 var application_root = process.cwd();
 
 /*
 * Listening Port
 */
-var port = process.env.PORT || 5000;
-var server = http.createServer(app).listen(8888);
-app.listen(port, function () {
-    console.log("Listening on " + port);
-});
+var port = process.env.PORT || 5000,
+    server = http.createServer(app).listen(port, function () {
+        console.log("Listening on port: " + port);
+    }),
+    io = require('socket.io').listen(server, { log: false });
 
-var io = require('socket.io').listen(server, { log: false });
 
 /*
 * Application Logic
 */
+
+var appId ='136332289871201';
+var appSecret = '72ce5a8da6c8d89fec92d76b78fc620a';
 
 // Config
 app.configure(function () {
     app.set('title', 'What2DoCU');
     app.use(express.bodyParser());
     app.use(express.cookieParser());
-    app.use(express.session({ secret: 'foo bar' }));
-    app.use(facebook.middleware({appId: '136332289871201', secret: '72ce5a8da6c8d89fec92d76b78fc620a'}));
+    app.use(express.session({ secret: 'what2docu' }));
+    app.use(express.static(application_root + "/public"));
     app.use(express.compress());
     app.use(app.router);
-    app.use(express.static(application_root + "/public"));
     app.use(express.errorHandler({
         dumpExceptions: true,
         showStack: true
     }));
 });
 
+io.configure(function () { 
+    io.set("transports", ["xhr-polling"]); 
+    io.set("polling duration", 10); 
+});
 
-var events = io.of('/events');
+
+var events = io.of('/events')
+.on('connection', function (socket) {
+    socket.on('set token', function (data) {
+        if (data.hasOwnProperty('token'))
+        {
+            var fb = new facebook({appId: appId, secret: appSecret});
+            fb.setAccessToken(data.token);
+            getEvents(fb, function(combined) {
+                makeQuery(fb, socket, combined, 0, function () {
+                    var URL =" http://data.adicu.com/affairs/student_events?pretty=false&api_token=51314d8e97ec7700025e0afd";
+                    var get_req = http.get(URL, function(response) {
+                        var body = "";
+                        response.on('data', function (chunk) {
+                            body += chunk;
+                        });
+                        response.on('end', function() { 
+                            var response = JSON.parse(body).data;
+                            var toSendADI = [];
+
+
+                            for (var i = 0; i < 12; i ++) {
+                                toSendADI.push({name: response[i].Event, start_time: response[i].Date + ", " + response[i].Time, location: response[i].Location});
+                            }
+
+                            makeQuery2(socket, toSendADI, 0);
+                        })
+                        response.on('error', function(err) {
+                            console.log("error"); 
+                        });
+
+                    });
+                });
+            });
+        }
+    });
+});
+
 var social = io.of('/social')
-.on('connection', function (sock) {
-    sock.on('click', function (data) {
-        sock.broadcast.emit('interest', data);
+.on('connection', function (socket) {
+    socket.on('click', function (data) {
+        socket.broadcast.emit('interest', data);
     });
 });
 
 app.engine('jade', require('jade').__express);
 app.set('view engine', 'jade');
 
-app.get('/', facebook.loginRequired(), function (req, res) {
-    req.facebook.api('/me?fields=id,name,link,picture,education', function(err, user) {
-        res.render('index', {locals: user});
+var isLoggedIn = function(req, res, next)
+{
+    var fbTemp = new facebook({appId: appId, secret: appSecret, request: req});
+    fbTemp.getUser(function (err, user) {
+        if (err) {
+            next(err);
+            next = null;
+        }
+        else {
+            if (user === 0) { 
+                try {
+                    var params = [];
+                    params["scope"] = "friends_events,friends_education_history,user_events,user_education_history";
+                    params["display"] = "popup";
+
+                    var url = fbTemp.getLoginUrl(params);
+                }
+                catch (err) {
+                    next(err);
+                    next = null;
+                    return;
+                }
+                res.redirect(url);
+                next = null;
+            }
+            else {
+                next();
+                next = null;
+            }
+        }
     });
-    getEvents(req, function(combined) {
-        makeQuery(req, combined, 0, function () {
+}
 
-            URL =" http://data.adicu.com/affairs/student_events?pretty=false&api_token=51314d8e97ec7700025e0afd";
+app.get('/', function (req, res) {
+    res.render('index');
+});
 
-            var get_req = http.get(URL, function(response) {
-                var body = "";
-                response.on('data', function (chunk) {
-                    body += chunk;
-                });
-                response.on('end', function() { 
-                    var response = JSON.parse(body).data;
-                    var toSendADI = [];
-
-
-                    for (var i = 0; i < 12; i ++) {
-                        toSendADI.push({name: response[i].Event, start_time: response[i].Date + ", " + response[i].Time, location: response[i].Location});
-                    }
-
-                    makeQuery2(req, toSendADI, 0);
-                })
-                response.on('error', function(err) {
-                    console.log("error"); 
-                });
-
-            });
+app.get('/home', isLoggedIn, function (req, res) {
+    var fbTemp = new facebook({appId: appId, secret: appSecret, request: req});
+    
+    fbTemp.api('/me?fields=id,name,link,picture,education', function(err, user) {
+        fbTemp.getAccessToken(function(err, token){
+            res.render('home', {locals: user, token: token});
         });
     });
 });
 
 
+
+
 //returns sorted array in form [ {id: <id1>, number: <number1>}, {id: <id2>, number: <number2>},...]
-var getEvents = function(req, res) {
-    var query = "SELECT+eid+FROM+event_member+WHERE+uid+IN+(SELECT+uid+FROM+user+WHERE+uid+IN+(SELECT+uid1+FROM+friend+WHERE+uid2=me())+AND+'Columbia'+IN+affiliations)+AND+start_time>=1362210094+AND+start_time<=1362808800";
-    req.facebook.api('/fql?q=' + query, function(err, results) {
+var getEvents = function(fb, res) {
+    var start_time = Math.round(new Date().getTime() / 1000);
+    var end_time = start_time + 604800;
+    var query = "SELECT+eid+FROM+event_member+WHERE+uid+IN+(SELECT+uid+FROM+user+WHERE+uid+IN+(SELECT+uid1+FROM+friend+WHERE+uid2=me())+AND+'Columbia'+IN+affiliations)+AND+start_time>=" + start_time + "+AND+start_time<=" + end_time;
+    fb.api('/fql?q=' + query , function(err, results) {
         if(err)
+        {
+            console.log(err);
             return;
-            
+        }  
         var ids = [], results = results.data;
 
 
@@ -152,17 +213,17 @@ var getEvents = function(req, res) {
     });
 }
 
-var makeQuery = function(req, combined, i, callback) {
+var makeQuery = function(fb, socket, combined, i, callback) {
     if (i < 32)
     {
         var query = combined[i].id + "?fields=name,start_time,end_time,location,picture";
-        req.facebook.api('/' + query, function(err, results){
+        fb.api('/' + query, function(err, results){
             if (err)
                 console.log("error");
             else
             {
-                events.emit('new', results);
-                makeQuery(req, combined, i + 1, callback);
+                socket.emit('new', results);
+                makeQuery(fb, socket, combined, i + 1, callback);
             }
         });
     }
@@ -170,9 +231,9 @@ var makeQuery = function(req, combined, i, callback) {
         callback();
 }
 
-var makeQuery2 = function(req, combined, i) {
+var makeQuery2 = function(socket, combined, i) {
     if (i<12) {
-        events.emit('new', combined[i]);
-        makeQuery2(req, combined, i+1);
+        socket.emit('new', combined[i]);
+        makeQuery2(socket, combined, i+1);
     }
 }

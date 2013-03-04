@@ -1,0 +1,78 @@
+doctype 5
+html(lang="en", style="min-height:100%;position:relative;")
+  head
+    title="What2DoCU"
+    link(rel='stylesheet', href='css/normalize.css')
+    link(rel='stylesheet', href='css/app.css')
+    link(rel='stylesheet', href='css/custom.css')
+    script(type="text/javascript", src='javascripts/zepto.min.js') 
+    script(type="text/javascript", src='javascripts/foundation.min.js') 
+    script(type="text/javascript", src="/socket.io/socket.io.js")
+  body(style='background:url("images/BG2.jpg") no-repeat center center fixed; -webkit-background-size: cover; -moz-background-size: cover; -o-background-size: cover;background-size: cover;text-align:center;')
+  .contain-to-grid.sticky
+    nav.top-bar
+      ul.title-area
+          li.name
+            h1
+              a(href='#') What2DoCU 
+          li.toggle-topbar.menu-icon
+            a(href='#')
+              span Menu
+        section.top-bar-section
+          ul.left
+            li.has-form
+              p#message(style="color:#FFFFFF;font-size:10px;")
+          ul.right
+            li.divider.hide-for-small
+            li.has-form
+              h5(style='font-size:10px;color:#FFFFFF;position:relative;top:5px;text-align:right;') #{locals.name}<br />#{locals.hasOwnProperty('education') ? locals.education[locals.education.length - 1].school.name : ""}
+            li.divider.show-for-small
+            li.has-form
+              img.polaroid(src=locals.picture.data.url, style='display:inline-block')
+  .row.panel.radius 
+    .large-12.large-centered.small-11.small-centered.columns(style='padding-left:50px')
+      ul#content(style='list-style-type:none')   
+
+    script
+      //Sockets
+      var count = 0;
+      var social;
+      var events;
+      $(document).ready(function () {
+        events = io.connect(window.location.hostname + '/events');
+        social = io.connect(window.location.hostname + '/social');
+        events.emit("set token", {token: "#{token}"});
+        events.on('new', eventReceived);
+        social.on('interest', clickReceived);
+      });
+    
+      $('#content').delegate('.event', 'click', function(event) {
+          social.emit("click", {"event": {"name": $(this).find('#name').html(), "link": $(this).find('a').attr('href')}});
+      }); 
+
+      function eventReceived(event){
+          if (count < 44)
+          {
+              var template;
+              if (event)
+              {
+                  if (event.id)
+                  {
+                      template = '<li class="event" id="' + event.id + '"><a href="http://facebook.com/' + event.id + '" target="_blank"><div class="container megatron"><div class="card"><div class="face front"><img src="//graph.facebook.com/' + event.id + '/picture?type=large"></div><div class="face back"><h3 id="name">' + event.name + '</h3><p>Begins at: ' + event.start_time + '<br>Ends at: ' + event.end_time + '<br>Location: ' + event.location + '</p></div></div></div></a></li>'
+                  }
+                  else
+                 {
+                      template = '<li class="event" id="columbia"><a><div class="container megatron"><div class="card"><div class="face front"><img src="/images/crown.jpg"></div><div class="face back"><h3 id="name">' + event.name + '</h3><p>Begins at: ' + event.start_time + '<br>Location: ' + event.location + '</p></div></div></div></a></li>'
+                  }
+                  $('#content').append(template);
+
+                  count++;
+              }
+          }
+      }
+    
+      function clickReceived(event) {
+          var link = event.event.hasOwnProperty('link') && event.event.link.length > 0 ? event.event.link : "#";
+          var target = link === "#" ? "" : "_blank";
+          $('#message').html("Someone is checking out<a href='" + link + "' target='" + target + "'>" + event.event.name + "</a>, you should too!");
+      }

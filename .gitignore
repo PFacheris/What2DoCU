@@ -5,6 +5,7 @@
 humans.txt
 robots.txt
 /node_modules
+/public/scss
 
 #sass
 *.rb

@@ -10,7 +10,7 @@
     "facebook-node-sdk": ">=0.2.0"
   },
   "engines": {
-    "node": "0.8.14",
+    "node": ">=0.8.14",
     "npm": "1.1.65"
   }
 }

@@ -2,66 +2,25 @@ doctype 5
 html(lang="en", style="min-height:100%;position:relative;")
   head
     title="What2DoCU"
-    link(rel='stylesheet', href='stylesheets/normalize.css')
-    link(rel='stylesheet', href='stylesheets/foundation.min.css')
-    link(rel='stylesheet', href='stylesheets/custom.css')
-    style(type='text/css')
-      
+    link(rel='stylesheet', href='css/normalize.css')
+    link(rel='stylesheet', href='css/app.css')
+    link(rel='stylesheet', href='css/custom.css')
     script(type="text/javascript", src='javascripts/zepto.min.js') 
     script(type="text/javascript", src='javascripts/foundation.min.js') 
-    script(type="text/javascript", src="http://localhost:8888/socket.io/socket.io.js")
-  body(style='background:url("images/BG2.jpg") no-repeat center center fixed; -webkit-background-size: cover; -moz-background-size: cover; -o-background-size: cover;background-size: cover;')
-    .row(style='position:relative;top:-16px;padding:0;')
-      #container.small-11.small-centered.columns(style='padding:0;background:#fcfcfc;repeat-x left bottom;border:1px solid #ccc;border-bottom:2px solid #bbb;border-top:1px solid #ddd;border-radius:10px;-webkit-border-radius:10px;-moz-border-radius:10px;height:100%;padding-bottom:20px;')
-        .row
-          .small-12.small-centered.columns
-            .top
-              h2(style='position:relative;left:10px;display:inline-block') What2DoCU
-              div(style='position:absolute;left:25%;width:50%;top:15px;display:inline-block')
-                p#message
-              div(style='position:absolute;right:15px;display:inline-block;vertical-align:middle;')
-                img.polaroid(src=locals.picture.data.url, style='display:inline-block')
-                p(style='float:right;display:inline-block;font-size:10px;') #{locals.name}<br />#{locals.education ? locals.education[locals.education.length - 1].school.name : ""}
-
-        ul.row#content(style='list-style-type:none')     
-        
+    script(type="text/javascript", src="/socket.io/socket.io.js")
+  body(style='background:url("images/BG2.jpg") no-repeat center center fixed; -webkit-background-size: cover; -moz-background-size: cover; -o-background-size: cover;background-size: cover;text-align:center;position:fixed !important; position:absolute; top:0; right:0; bottom:0; left:0;')
+    .row(style='postion:absolute;top:500px;')
+      #info.large-8.large-centered.small-11.small-centered.columns.panel.radius
+        h1 What2DoCU
+        h2.subheader Find the events the people you care about are going to. 
+        a.large.button.radius(href='/home') Login with 
+          span(style='font-family: Ubuntu, sans-serif;font-weight:bold;',) facebook
+          
     script
-      //Sockets
-      var count = 0;
-      var social;
-      var events;
-      $(document).ready(function () {
-        events = io.connect('http://localhost:8888/events');
-        social = io.connect('http://localhost:8888/social');
-        events.on('new', eventReceived);
-        social.on('interest', clickReceived);
-      });
+      $(document).ready(onResize);
+      $(window).resize(onResize);
       
-      $('#content').delegate('.event', 'click', function(event) {
-          social.emit("click", {"event": {"name": $(this).find('#name').html(), "link": $(this).find('a').attr('href')}});
-      }); 
-     
-      function eventReceived(event){
-          if (count <= 44)
-          {
-              var template;
-              if (event)
-              {
-                  if (event.id)
-                  {
-                      template = '<li class="event" id="' + event.id + '"><a href="http://facebook.com/' + event.id + '" target="_blank"><div class="container megatron"><div class="card"><div class="face front"><img src="//graph.facebook.com/' + event.id + '/picture?type=large"></div><div class="face back"><h3 id="name">' + event.name + '</h3><p>Begins at: ' + event.start_time + '<br>Ends at: ' + event.end_time + '<br>Location: ' + event.location + '</p></div></div></div></a></li>'
-                  }
-                  else
-                  {
-                      template = '<li class="event" id="columbia"><a><div class="container megatron"><div class="card"><div class="face front"><img src="/images/crown.jpg"></div><div class="face back"><h3 id="name">' + event.name + '</h3><p>Begins at: ' + event.start_time + '<br>Location: ' + event.location + '</p></div></div></div></a></li>'
-                  }
-                  $('#content').append(template);
-
-                  count++;
-              }
-          }
-      }
-      
-      function clickReceived(event) {
-          $('#message').html("Someone is checking out <a href='" + event.event.link + "'>" + event.event.name + "</a>, you should too!");
+      var onResize = function () {
+         var top = ($('body').height() / 2) - ($('#info').height() / 2);
+         $('#info').css('top', top + 'px');
       }
