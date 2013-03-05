@@ -149,7 +149,7 @@ app.get('/home', isLoggedIn, function (req, res) {
 var getEvents = function(fb, res) {
     var start_time = Math.round(new Date().getTime() / 1000);
     var end_time = start_time + 604800;
-    var query = "SELECT+eid+FROM+event_member+WHERE+uid+IN+(SELECT+uid+FROM+user+WHERE+uid+IN+(SELECT+uid1+FROM+friend+WHERE+uid2=me())+AND+'Columbia'+IN+affiliations)+AND+start_time>=" + start_time + "+AND+start_time<=" + end_time;
+    var query = "SELECT+eid+FROM+event_member+WHERE+uid+IN+(SELECT+uid+FROM+user+WHERE+uid+IN+(SELECT+uid1+FROM+friend+WHERE+uid2=me())+AND+'Columbia'+IN+affiliations)+AND+start_time>=" + start_time + "+AND+start_time<=" + end_time + "+AND+rsvp_status='attending'";
     fb.api('/fql?q=' + query , function(err, results) {
         if(err)
         {
