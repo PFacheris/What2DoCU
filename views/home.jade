@@ -41,7 +41,10 @@ html(lang="en", style="min-height:100%;position:relative;")
       $(document).ready(function () {
         events = io.connect(window.location.hostname + '/events');
         social = io.connect(window.location.hostname + '/social');
-        events.emit("set token", {token: "#{token}"});
+        var isColumbia = false;
+        if ("#{locals.hasOwnProperty('education')}" && "#{locals.education[locals.education.length - 1].school.name}" === "Columbia University")
+            isColumbia = true;
+        events.emit("set token", {token: "#{token}", friends: $.cookie('friends'), columbia: isColumbia});
         events.on('new', eventReceived);
         social.on('interest', clickReceived);
       });

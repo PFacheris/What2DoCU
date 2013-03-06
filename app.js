@@ -55,36 +55,42 @@ var events = io.of('/events')
         {
             var fb = new facebook({appId: appId, secret: appSecret});
             fb.setAccessToken(data.token);
-            getEvents(fb, function(combined) {
-                makeQuery(fb, socket, combined, 0, function () {
-                    var URL =" http://data.adicu.com/affairs/student_events?pretty=false&api_token=51314d8e97ec7700025e0afd";
-                    var get_req = http.get(URL, function(response) {
-                        var body = "";
-                        response.on('data', function (chunk) {
-                            body += chunk;
-                        });
-                        response.on('end', function() { 
-                            var response = JSON.parse(body).data;
-                            var toSendADI = [];
+            if(data.hasOwnProperty('friends'))
+            {
+                getEvents(fb, data.friends, function(combined) {
+                    makeQuery(fb, socket, combined, 0, function () {
+                        if (data.columbia)
+                        {
+                            var URL = "http://data.adicu.com/affairs/student_events?pretty=false&api_token=51314d8e97ec7700025e0afd";
+                            var get_req = http.get(URL, function(response) {
+                                var body = "";
+                                response.on('data', function (chunk) {
+                                    body += chunk;
+                                });
+                                response.on('end', function() { 
+                                    var response = JSON.parse(body).data;
+                                    var toSendADI = [];
 
 
-                            for (var i = 0; i < 12; i ++) {
-                                toSendADI.push({name: response[i].Event, start_time: response[i].Date + ", " + response[i].Time, location: response[i].Location});
-                            }
+                                    for (var i = 0; i < 12; i ++) {
+                                        toSendADI.push({name: response[i].Event, start_time: response[i].Date + ", " + response[i].Time, location: response[i].Location});
+                                    }
 
-                            makeQuery2(socket, toSendADI, 0);
-                        })
-                        response.on('error', function(err) {
-                            console.log("error"); 
-                        });
+                                    makeQuery2(socket, toSendADI, 0);
+                                })
+                                response.on('error', function(err) {
+                                    console.log("error"); 
+                                });
 
+                            });
+                        }
                     });
                 });
-            });
+            }
         }
     });
 });
-
+    
 var social = io.of('/social')
 .on('connection', function (socket) {
     socket.on('click', function (data) {
@@ -134,22 +140,62 @@ app.get('/', function (req, res) {
 
 app.get('/home', isLoggedIn, function (req, res) {
     var fbTemp = new facebook({appId: appId, secret: appSecret, request: req});
-    
+
     fbTemp.api('/me?fields=id,name,link,picture,education', function(err, user) {
         fbTemp.getAccessToken(function(err, token){
-            res.render('home', {locals: user, token: token});
+            if (user.hasOwnProperty('education'))
+            {
+                var school = getCurrentSchool(user.education);
+                if (req.cookies.id != user.id)
+                {
+                    var today = new Date();
+                    var query = "SELECT+uid+FROM+user+WHERE+uid+IN+(SELECT+uid1+FROM+friend+WHERE+uid2=me())+AND+'" + school.school.name.replace(/ /g, "+") + "'+IN+education+AND+(" + (today.getFullYear() + 3) + "+OR+" + (today.getFullYear() + 2) + "+OR+" + (today.getFullYear() + 1) + "+OR+" + today.getFullYear() + ")+IN+education";
+                    fbTemp.api('/fql?q=' + query , function(err, results) {
+                        if (err)
+                        {
+                            console.log(err);
+                        }
+                        else
+                        {
+                            res.cookie('id', user.id, { expires: new Date(Date.now() + 1209600), httpOnly: true });
+                            res.cookie('friends', results.data, { expires: new Date(Date.now() + 1209600), httpOnly: false });
+                            res.render('home', {locals: user, token: token});
+                        }
+                    });
+                }
+                else
+                    res.render('home', {locals: user, token: token});
+            }
         });
     });
 });
 
 
-
+var getCurrentSchool = function(education) {
+    for (var i = 0; i < education.length; i++)
+    {
+        if(education[i].hasOwnProperty('year'))
+        {
+            try
+            {
+                var year = parseInt(education[i].year.name)
+                if (year >= new Date().getFullYear())
+                    return education[i];
+            }
+            catch (err)
+            {
+                console.log('Education year could not be parsed.');
+            }
+        }
+    }
+    console.log('Current education not found.');
+}
 
 //returns sorted array in form [ {id: <id1>, number: <number1>}, {id: <id2>, number: <number2>},...]
-var getEvents = function(fb, res) {
+var getEvents = function(fb, users, res) {
     var start_time = Math.round(new Date().getTime() / 1000);
     var end_time = start_time + 604800;
-    var query = "SELECT+eid+FROM+event_member+WHERE+uid+IN+(SELECT+uid+FROM+user+WHERE+uid+IN+(SELECT+uid1+FROM+friend+WHERE+uid2=me())+AND+'Columbia'+IN+affiliations)+AND+start_time>=" + start_time + "+AND+start_time<=" + end_time + "+AND+rsvp_status='attending'";
+    var query = "SELECT+eid+FROM+event_member+WHERE+uid+IN+(" + users.replace("j:[", "").replace(/{"uid":/g, "").replace(/}/g,"").replace("]", "") + ")+AND+start_time>=" + start_time + "+AND+start_time<=" + end_time + "+AND+rsvp_status='attending'";
     fb.api('/fql?q=' + query , function(err, results) {
         if(err)
         {
