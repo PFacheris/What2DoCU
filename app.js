@@ -134,38 +134,79 @@ var isLoggedIn = function(req, res, next)
     });
 }
 
-app.get('/', function (req, res) {
-    res.render('index');
-});
-
-app.get('/home', isLoggedIn, function (req, res) {
+var hasActiveEducation = function (req, res, next) {
     var fbTemp = new facebook({appId: appId, secret: appSecret, request: req});
-
     fbTemp.api('/me?fields=id,name,link,picture,education', function(err, user) {
         fbTemp.getAccessToken(function(err, token){
             if (user.hasOwnProperty('education'))
             {
                 var school = getCurrentSchool(user.education);
-                if (req.cookies.id != user.id)
+                if (school)
                 {
-                    var today = new Date();
-                    var query = "SELECT+uid+FROM+user+WHERE+uid+IN+(SELECT+uid1+FROM+friend+WHERE+uid2=me())+AND+'" + school.school.name.replace(/ /g, "+") + "'+IN+education+AND+(" + (today.getFullYear() + 3) + "+OR+" + (today.getFullYear() + 2) + "+OR+" + (today.getFullYear() + 1) + "+OR+" + today.getFullYear() + ")+IN+education";
-                    fbTemp.api('/fql?q=' + query , function(err, results) {
-                        if (err)
-                        {
-                            console.log(err);
-                        }
-                        else
-                        {
-                            res.cookie('id', user.id, { expires: new Date(Date.now() + 1209600), httpOnly: true });
-                            res.cookie('friends', results.data, { expires: new Date(Date.now() + 1209600), httpOnly: false });
-                            res.render('home', {locals: user, token: token});
-                        }
-                    });
+                    if (req.cookies.id != user.id)
+                    {
+                        var today = new Date();
+                        var query = "SELECT+uid+FROM+user+WHERE+uid+IN+(SELECT+uid1+FROM+friend+WHERE+uid2=me())+AND+'" + school.school.name.replace(/ /g, "+") + "'+IN+education+AND+(" + (today.getFullYear() + 3) + "+OR+" + (today.getFullYear() + 2) + "+OR+" + (today.getFullYear() + 1) + "+OR+" + today.getFullYear() + ")+IN+education+LIMIT+275";
+                        fbTemp.api('/fql?q=' + query , function(err, results) {
+                            if (err)
+                            {
+                                next(err);
+                                next = null; 
+                            }
+                            else
+                            {
+                                res.cookie('id', user.id, { expires: new Date(Date.now() + 1209600), httpOnly: true });
+                                res.cookie('friends', JSON.stringify(results.data).replace("[", "").replace(/{"uid":/g, "").replace(/}/g,"").replace("]", ""), { expires: new Date(Date.now() + 1209600), httpOnly: false });
+                                res.render('home', {locals: user, token: token});
+                                next = null;
+
+                            }
+                        });
+                    }
+                    else
+                    {
+                        res.render('home', {locals: user, token: token});
+                        next = null;
+                    }
                 }
                 else
-                    res.render('home', {locals: user, token: token});
+                {
+                    next();
+                    next = null;
+                }
+
             }
+            else
+            {
+                next();
+                next = null;
+            }
+        });
+    });
+}
+
+app.get('/', function (req, res) {
+    res.render('index');
+});
+
+app.get('/home', isLoggedIn, hasActiveEducation, function (req, res) {
+    var fbTemp = new facebook({appId: appId, secret: appSecret, request: req});
+    fbTemp.api('/me?fields=id,name,link,picture,location', function(err, user) {
+        fbTemp.getAccessToken(function(err, token){
+            var query = "SELECT+uid+FROM+user+WHERE+uid+IN+(SELECT+uid1+FROM+friend+WHERE+uid2=me())+AND+" + user.location.id + "+IN+current_location+LIMIT+275";
+            fbTemp.api('/fql?q=' + query , function(err, results) {
+                if (err)
+                {
+                    console.log(err);
+                    res.redirect('/');
+                }
+                else
+                {
+                    res.cookie('id', user.id, { expires: new Date(Date.now() + 1209600), httpOnly: true });
+                    res.cookie('friends', JSON.stringify(results.data).replace("[", "").replace(/{"uid":/g, "").replace(/}/g,"").replace("]", ""), { expires: new Date(Date.now() + 1209600), httpOnly: false });
+                    res.render('home', {locals: user, token: token});
+                }
+            });
         });
     });
 });
@@ -195,7 +236,7 @@ var getCurrentSchool = function(education) {
 var getEvents = function(fb, users, res) {
     var start_time = Math.round(new Date().getTime() / 1000);
     var end_time = start_time + 604800;
-    var query = "SELECT+eid+FROM+event_member+WHERE+uid+IN+(" + users.replace("j:[", "").replace(/{"uid":/g, "").replace(/}/g,"").replace("]", "") + ")+AND+start_time>=" + start_time + "+AND+start_time<=" + end_time + "+AND+rsvp_status='attending'";
+    var query = "SELECT+eid+FROM+event_member+WHERE+uid+IN+(" + users + ")+AND+start_time>=" + start_time + "+AND+start_time<=" + end_time + "+AND+rsvp_status='attending'+OR+rsvp_status='maybe'";
     fb.api('/fql?q=' + query , function(err, results) {
         if(err)
         {
@@ -260,7 +301,7 @@ var getEvents = function(fb, users, res) {
 }
 
 var makeQuery = function(fb, socket, combined, i, callback) {
-    if (i < 32)
+    if (i < 32 && i < combined.length)
     {
         var query = combined[i].id + "?fields=name,start_time,end_time,location,picture";
         fb.api('/' + query, function(err, results){
